@@ -1,8 +1,9 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 .logo {
@@ -46,27 +47,50 @@
 
 /* Add modern layout for the app */
 .app-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  min-height: 100vh;
+  padding: min(1rem, 2vw);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: min(2rem, 4vw);
+}
+
+h1 {
+  font-size: clamp(1.2rem, 3vw, 2.5rem);
   text-align: center;
+  margin: min(1rem, 2vw) 0;
+  width: 100%;
+  padding: 0 min(1rem, 2vw);
+  box-sizing: border-box;
 }
 
 .drop-row {
+  width: 100%;
+  max-width: min(1200px, 95vw);
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  justify-content: center;
+  flex-direction: column;
+  gap: min(1rem, 2vw);
+  margin: 0 auto;
+  padding: 0 min(1rem, 2vw);
+  box-sizing: border-box;
 }
 
 .dropzone {
   flex: 1;
-  max-width: 300px;
+  min-height: min(150px, 30vh);
   border: 2px dashed #646cff;
-  border-radius: 8px;
-  padding: 2rem 1rem;
+  border-radius: min(8px, 2vw);
+  padding: min(1.5rem, 3vw);
   transition: all 0.2s ease;
   background: rgba(100, 108, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
 .dropzone:hover {
@@ -75,33 +99,42 @@
 }
 
 .visualizer-row {
+  width: 100%;
+  max-width: min(1200px, 95vw);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: min(1.5rem, 3vw);
+  padding: 0 min(1rem, 2vw);
+  box-sizing: border-box;
 }
 
 .visualizer-canvas {
-  border-radius: 8px;
-  background: #000;
+  width: 100%;
   max-width: 100%;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  height: auto;
+  aspect-ratio: 16/9;
+  border-radius: min(12px, 2vw);
+  background: #000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .controls {
   width: 100%;
-  max-width: 640px;
-  padding: 1rem;
+  max-width: 100%;
+  padding: min(1.5rem, 3vw);
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: min(12px, 2vw);
+  display: flex;
+  flex-direction: column;
+  gap: min(1rem, 2vw);
 }
 
 .volume-bar {
   width: 100%;
-  height: 4px;
+  height: min(6px, 1.5vw);
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  margin: 0.5rem 0;
+  border-radius: min(3px, 0.75vw);
   overflow: hidden;
 }
 
@@ -112,20 +145,23 @@
 }
 
 .time-info {
-  font-size: 0.9em;
+  font-size: clamp(0.7rem, 1.8vw, 0.9rem);
   color: #888;
-  margin-bottom: 0.5rem;
+  text-align: center;
 }
 
 button {
+  width: min(200px, 80%);
+  margin: 0 auto;
   background: #646cff;
   color: white;
   border: none;
-  padding: 0.6em 1.2em;
-  border-radius: 8px;
+  padding: min(0.8em, 2vw) min(1.5em, 3vw);
+  border-radius: min(8px, 2vw);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
+  font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
 button:hover:not(:disabled) {
@@ -139,17 +175,43 @@ button:disabled {
 }
 
 @media (min-width: 768px) {
+  .drop-row {
+    flex-direction: row;
+  }
+
+  .dropzone {
+    max-width: 50%;
+    font-size: 1rem;
+  }
+
   .visualizer-row {
     flex-direction: row;
     align-items: flex-start;
   }
 
   .controls {
+    width: min(300px, 30%);
+    min-width: min(300px, 30%);
+  }
+
+  .visualizer-canvas {
     flex: 1;
-    max-width: 300px;
+    min-width: 0;
+    /* Prevents flex item from overflowing */
+  }
+
+  .time-info {
+    font-size: 0.9rem;
+  }
+
+  button {
+    font-size: 1rem;
   }
 }
 
-.read-the-docs {
+footer {
+  text-align: center;
+  padding: min(1rem, 2vw);
   color: #888;
+  font-size: clamp(0.7rem, 1.8vw, 0.9rem);
 }
