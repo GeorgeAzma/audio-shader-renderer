@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
-import newShader from './assets/new-shader.frag?raw'
+import newShader from './assets/blue-waves.frag?raw'
 
 // Default to the new shader
 const defaultShader = newShader
@@ -90,7 +90,7 @@ function App() {
     const source = ctx.createMediaElementSource(audio)
     sourceNodeRef.current = source
     const analyser = ctx.createAnalyser()
-    analyser.fftSize = 2048 // Increased for better resolution
+    analyser.fftSize = 64 // Increased for better resolution
     analyser.smoothingTimeConstant = 0.85 // Add smoothing
     source.connect(analyser)
     analyser.connect(ctx.destination)
