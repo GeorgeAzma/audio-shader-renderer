@@ -264,9 +264,16 @@ function App() {
     audioRef.current.currentTime = 0
     audioRef.current.play()
     recorder.start()
-    // Stop when audio ends
-    audioRef.current.onended = () => {
+  }
+
+  const handleStopRecording = () => {
+    const recorder = mediaRecorderRef.current
+    const audio = audioRef.current
+    if (recorder && recorder.state === 'recording') {
       recorder.stop()
+      if (audio) {
+        audio.pause()
+      }
     }
   }
 
@@ -323,8 +330,12 @@ function App() {
           <div className="time-info">
             {Math.floor(currentTime)} / {Math.floor(duration)} sec
           </div>
-          <button onClick={handleRecord} disabled={!audioUrl || isRecording} style={{ marginTop: 8 }}>
-            {isRecording ? 'Rendering...' : 'Render Video'}
+          <button
+            onClick={isRecording ? handleStopRecording : handleRecord}
+            disabled={!audioUrl}
+            style={{ marginTop: 8 }}
+          >
+            {isRecording ? 'Stop Recording' : 'Render Video'}
           </button>
         </div>
       </div>
