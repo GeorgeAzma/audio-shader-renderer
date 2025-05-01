@@ -5,9 +5,25 @@ import siriLight from './assets/siri-dark.frag?raw'
 // Default to the siri light shader
 const defaultShader = siriLight
 
+// Video resolution options
+type Resolution = {
+  name: string;
+  width: number;
+  height: number;
+}
+
+const resolutions: Resolution[] = [
+  { name: "720p", width: 1280, height: 720 },
+  { name: "1080p", width: 1920, height: 1080 },
+  { name: "1440p", width: 2560, height: 1440 },
+  { name: "4K", width: 3840, height: 2160 },
+  { name: "8K", width: 7680, height: 4320 }
+]
+
 function App() {
   // State for shader, audio, and UI
   const [shaderCode, setShaderCode] = useState<string>(defaultShader)
+  const [selectedResolution, setSelectedResolution] = useState<Resolution>(resolutions[1]) // Default to 1080p
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
@@ -105,6 +121,9 @@ function App() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    // Update canvas resolution when selected resolution changes
+    canvas.width = selectedResolution.width
+    canvas.height = selectedResolution.height
     const gl = canvas.getContext('webgl')
     if (!gl) return
     glRef.current = gl
@@ -165,7 +184,7 @@ function App() {
     return () => {
       if (program) gl.deleteProgram(program)
     }
-  }, [shaderCode])
+  }, [shaderCode, selectedResolution])
 
   // Animation loop: render shader, update uniforms
   useEffect(() => {
@@ -316,8 +335,19 @@ function App() {
         </div>
       </div>
       <div className="visualizer-row">
-        <canvas ref={canvasRef} width={640} height={360} className="visualizer-canvas" />
+        <canvas ref={canvasRef} className="visualizer-canvas" />
         <div className="controls">
+          <select
+            value={JSON.stringify(selectedResolution)}
+            onChange={(e) => setSelectedResolution(JSON.parse(e.target.value))}
+            className="resolution-select"
+          >
+            {resolutions.map((res) => (
+              <option key={res.name} value={JSON.stringify(res)}>
+                {res.name} ({res.width}×{res.height})
+              </option>
+            ))}
+          </select>
           <audio
             ref={audioRef}
             src={audioUrl || undefined}
