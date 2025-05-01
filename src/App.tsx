@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
-import newShader from './assets/blue-waves.frag?raw'
+import siriLight from './assets/siri-dark.frag?raw'
 
-// Default to the new shader
-const defaultShader = newShader
+// Default to the siri light shader
+const defaultShader = siriLight
 
 function App() {
   // State for shader, audio, and UI
@@ -199,7 +199,7 @@ function App() {
 
         // Apply smoothing
         const smoothingFactor = 0.85 // Balanced smoothing
-        const amplification = 2.0    // Moderate amplification
+        const amplification = 1.7    // Moderate amplification
         const newSmoothedVolume = smoothingFactor * smoothedVolume + (1 - smoothingFactor) * v
         setSmoothedVolume(newSmoothedVolume)
         setVolume(v)
