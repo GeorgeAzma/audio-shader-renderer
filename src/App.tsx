@@ -1,18 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
+import newShader from './assets/new-shader.frag?raw'
 
-// Simple test fragment shader (GLSL) as a string
-const defaultShader = `
-precision mediump float;
-uniform float u_time;
-uniform float u_volume;
-varying vec2 vUv;
-void main() {
-  float r = 0.5 + 0.5 * sin(u_time + vUv.x * 10.0 + u_volume * 5.0);
-  float g = 0.5 + 0.5 * sin(u_time + vUv.y * 10.0);
-  float b = 0.5 + 0.5 * sin(u_time);
-  gl_FragColor = vec4(r, g, b, 1.0);
-}`
+// Default to the new shader
+const defaultShader = newShader
 
 function App() {
   // State for shader, audio, and UI
@@ -21,6 +12,7 @@ function App() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [volume, setVolume] = useState(0)
+  const [smoothedVolume, setSmoothedVolume] = useState(0)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
 
@@ -153,6 +145,7 @@ function App() {
       shaderProgramRef.current = program
       uniformsRef.current.u_time = gl.getUniformLocation(program, 'u_time')
       uniformsRef.current.u_volume = gl.getUniformLocation(program, 'u_volume')
+      uniformsRef.current.u_resolution = gl.getUniformLocation(program, 'u_resolution')
       // Setup geometry
       const pos = gl.createBuffer()!
       gl.bindBuffer(gl.ARRAY_BUFFER, pos)
@@ -180,10 +173,15 @@ function App() {
       const program = shaderProgramRef.current
       if (!gl || !program) return
       gl.useProgram(program)
+
+      // Resolution uniform
+      gl.uniform2f(uniformsRef.current.u_resolution, gl.drawingBufferWidth, gl.drawingBufferHeight)
+
       // Time uniform
       const t = ((audioRef.current?.currentTime || 0))
       gl.uniform1f(uniformsRef.current.u_time, t)
-      // Volume uniform
+
+      // Volume uniform with smoothing and higher amplitude
       let v = 0
       if (analyserRef.current && dataArrayRef.current) {
         analyserRef.current.getByteTimeDomainData(dataArrayRef.current)
@@ -195,9 +193,19 @@ function App() {
           sum += val * val
         }
         v = Math.sqrt(sum / arr.length)
+
+        // Apply smoothing and amplification
+        const smoothingFactor = 0.997 // Higher = smoother, range 0-1
+        const amplification = 3.0 // Increase this for higher volume response
+        const newSmoothedVolume = smoothingFactor * smoothedVolume + (1 - smoothingFactor) * v
+        setSmoothedVolume(newSmoothedVolume)
         setVolume(v)
+
+        // Use smoothed and amplified volume for shader
+        v = Math.min(newSmoothedVolume * amplification, 1.0)
       }
       gl.uniform1f(uniformsRef.current.u_volume, v)
+
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -207,7 +215,7 @@ function App() {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [audioUrl, shaderCode])
+  }, [audioUrl, shaderCode, smoothedVolume]) // Added smoothedVolume to dependencies
 
   // Audio time update
   useEffect(() => {
