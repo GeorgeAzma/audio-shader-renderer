@@ -188,6 +188,7 @@ function App() {
 
   // Animation loop: render shader, update uniforms
   useEffect(() => {
+    let lastVolume = 0; // Keep track of volume locally
     function draw() {
       const gl = glRef.current
       const program = shaderProgramRef.current
@@ -219,12 +220,14 @@ function App() {
         // Apply smoothing
         const smoothingFactor = 0.85 // Balanced smoothing
         const amplification = 1.7    // Moderate amplification
-        const newSmoothedVolume = smoothingFactor * smoothedVolume + (1 - smoothingFactor) * v
-        setSmoothedVolume(newSmoothedVolume)
-        setVolume(v)
+        lastVolume = smoothingFactor * lastVolume + (1 - smoothingFactor) * v
+        v = Math.min(lastVolume * amplification, 1.0)
 
-        // Use smoothed and amplified volume for shader
-        v = Math.min(newSmoothedVolume * amplification, 1.0)
+        // Update volume state less frequently to prevent re-renders
+        if (Math.abs(lastVolume - smoothedVolume) > 0.01) {
+          setVolume(v)
+          setSmoothedVolume(lastVolume)
+        }
       }
       gl.uniform1f(uniformsRef.current.u_volume, v)
 
@@ -237,7 +240,7 @@ function App() {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [audioUrl, shaderCode, smoothedVolume])
+  }, [audioUrl, shaderCode])
 
   // Audio time update
   useEffect(() => {
