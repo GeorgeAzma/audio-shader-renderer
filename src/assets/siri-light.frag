@@ -35,9 +35,7 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min_res * 1.1;
     float t = u_time;
     
-    // Add volume influence
     float vol = u_volume * 2.0;
-    t *= 1.0;
 
     float l = dot(uv, uv);
     gl_FragColor = vec4(1);
