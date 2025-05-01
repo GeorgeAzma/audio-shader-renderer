@@ -90,7 +90,8 @@ function App() {
     const source = ctx.createMediaElementSource(audio)
     sourceNodeRef.current = source
     const analyser = ctx.createAnalyser()
-    analyser.fftSize = 256
+    analyser.fftSize = 2048 // Increased for better resolution
+    analyser.smoothingTimeConstant = 0.85 // Add smoothing
     source.connect(analyser)
     analyser.connect(ctx.destination)
     analyserRef.current = analyser
@@ -181,22 +182,24 @@ function App() {
       const t = ((audioRef.current?.currentTime || 0))
       gl.uniform1f(uniformsRef.current.u_time, t)
 
-      // Volume uniform with smoothing and higher amplitude
+      // Volume uniform with improved frequency analysis
       let v = 0
       if (analyserRef.current && dataArrayRef.current) {
-        analyserRef.current.getByteTimeDomainData(dataArrayRef.current)
-        // Root mean square (RMS) for volume
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current)
+        // Average of frequency data for volume
         const arr = dataArrayRef.current
         let sum = 0
-        for (let i = 0; i < arr.length; i++) {
-          const val = (arr[i] - 128) / 128
-          sum += val * val
+        // Focus on more meaningful frequency range (skip very low frequencies)
+        const start = Math.floor(arr.length * 0.1) // Start at 10% of frequency range
+        const end = Math.floor(arr.length * 0.8)   // End at 80% of frequency range
+        for (let i = start; i < end; i++) {
+          sum += arr[i]
         }
-        v = Math.sqrt(sum / arr.length)
+        v = sum / ((end - start) * 255) // Normalize to 0-1 range
 
-        // Apply smoothing and amplification
-        const smoothingFactor = 0.997 // Higher = smoother, range 0-1
-        const amplification = 3.0 // Increase this for higher volume response
+        // Apply smoothing
+        const smoothingFactor = 0.85 // Balanced smoothing
+        const amplification = 2.0    // Moderate amplification
         const newSmoothedVolume = smoothingFactor * smoothedVolume + (1 - smoothingFactor) * v
         setSmoothedVolume(newSmoothedVolume)
         setVolume(v)
@@ -215,7 +218,7 @@ function App() {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [audioUrl, shaderCode, smoothedVolume]) // Added smoothedVolume to dependencies
+  }, [audioUrl, shaderCode, smoothedVolume])
 
   // Audio time update
   useEffect(() => {
@@ -325,7 +328,6 @@ function App() {
           </button>
         </div>
       </div>
-      <footer style={{ marginTop: 32, color: '#888', fontSize: '0.9em' }}>Made with React, WebGL, Web Audio API, and MediaRecorder</footer>
     </div>
   )
 }
