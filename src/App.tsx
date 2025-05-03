@@ -260,7 +260,7 @@ function App() {
   const handleRecord = async () => {
     if (!canvasRef.current || !audioRef.current) return
     setIsRecording(true)
-    const stream = canvasRef.current.captureStream(60)
+    const stream = canvasRef.current.captureStream(30)
     const audioStream = (audioRef.current as any).captureStream()
     // Combine video and audio
     const combined = new MediaStream([
