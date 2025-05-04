@@ -23,11 +23,9 @@ function App() {
   const [selectedResolution, setSelectedResolution] = useState<Resolution>(resolutions[1]) // Default to 1080p
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [shaderFile, setShaderFile] = useState<File | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-  const [volume, setVolume] = useState(0)
   const [smoothedVolume, setSmoothedVolume] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -50,6 +48,7 @@ function App() {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
     if (file && file.name.endsWith('.frag')) {
+      setShaderFile(file)
       file.text().then(setShaderCode)
     }
   }
@@ -66,6 +65,7 @@ function App() {
   const onShaderFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && file.name.endsWith('.frag')) {
+      setShaderFile(file)
       file.text().then(setShaderCode)
     }
   }
@@ -93,26 +93,49 @@ function App() {
     }
   }, [])
 
-  // Audio setup and volume analysis
+  // Audio context and Analyser
   useEffect(() => {
-    if (!audioUrl) return
-    const audio = audioRef.current
-    if (!audio) return
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     audioContextRef.current = ctx
-    const source = ctx.createMediaElementSource(audio)
-    sourceNodeRef.current = source
     const analyser = ctx.createAnalyser()
-    analyser.fftSize = 512 // Increased for better resolution
-    analyser.smoothingTimeConstant = 0.85 // Add smoothing
-    source.connect(analyser)
-    analyser.connect(ctx.destination)
+    analyser.fftSize = 512
+    analyser.smoothingTimeConstant = 0.85
     analyserRef.current = analyser
     dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
+
     return () => {
       ctx.close()
     }
+  }, [])
+
+  useEffect(() => {
+    if (!audioUrl || !audioContextRef.current || !analyserRef.current) return
+    const audio = audioRef.current
+    if (!audio) return
+
+    const ctx = audioContextRef.current
+    const analyser = analyserRef.current
+
+    if (!sourceNodeRef.current) {
+      const source = ctx.createMediaElementSource(audio)
+      sourceNodeRef.current = source
+      source.connect(analyser)
+      analyser.connect(ctx.destination)
+    }
+    return () => { }
   }, [audioUrl])
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onEnded = () => {
+      if (isRecording) handleStopRecording();
+    };
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [isRecording, audioUrl]);
 
   // WebGL shader setup
   useEffect(() => {
@@ -206,12 +229,12 @@ function App() {
         // Average of frequency data for volume
         const arr = dataArrayRef.current
         let sum = 0
-        const start = Math.floor(arr.length * 0.3)
-        const end = Math.floor(arr.length * 0.7)
+        const start = Math.floor(arr.length * 0.0)
+        const end = Math.floor(arr.length * 1.0)
         for (let i = start; i < end; i++) {
           sum += arr[i]
         }
-        v = sum / ((end - start) * 255) // Normalize to 0-1 range
+        v = Math.sqrt(sum / ((end - start) * 255)) // Normalize to 0-1 range
 
         // Apply smoothing
         const smoothingFactor = 0.85 // Balanced smoothing
@@ -221,7 +244,6 @@ function App() {
 
         // Update volume state less frequently to prevent re-renders
         if (Math.abs(lastVolume - smoothedVolume) > 0.01) {
-          setVolume(v)
           setSmoothedVolume(lastVolume)
         }
       }
@@ -237,20 +259,6 @@ function App() {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
   }, [audioUrl, shaderCode])
-
-  // Audio time update
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    const onTime = () => setCurrentTime(audio.currentTime)
-    const onLoaded = () => setDuration(audio.duration)
-    audio.addEventListener('timeupdate', onTime)
-    audio.addEventListener('loadedmetadata', onLoaded)
-    return () => {
-      audio.removeEventListener('timeupdate', onTime)
-      audio.removeEventListener('loadedmetadata', onLoaded)
-    }
-  }, [audioUrl])
 
   // Video recording
   const handleRecord = async () => {
@@ -320,7 +328,8 @@ function App() {
           onClick={openShaderFileDialog}
           style={{ cursor: 'pointer' }}
         >
-          <p>Drag & drop <b>.frag</b> shader file here<br />or click to browse<br /><span style={{ fontSize: '0.9em', color: '#888' }}>(or use test shader)</span></p>
+          <p>Drag & drop <b>.frag</b> shader</p>
+          {shaderFile && <span style={{ fontSize: '0.9em', color: '#999' }}>{shaderFile.name}</span>}
         </div>
         <div
           className="dropzone"
@@ -329,8 +338,8 @@ function App() {
           onClick={openAudioFileDialog}
           style={{ cursor: 'pointer' }}
         >
-          <p>Drag & drop <b>mp3</b> file here<br />or click to browse</p>
-          {audioFile && <span style={{ fontSize: '0.9em' }}>{audioFile.name}</span>}
+          <p>Drag & drop <b>mp3</b></p>
+          {audioFile && <span style={{ fontSize: '0.9em', color: '#999' }}>{audioFile.name}</span>}
         </div>
       </div>
       <div className="visualizer-row">
@@ -343,7 +352,7 @@ function App() {
           >
             {resolutions.map((res) => (
               <option key={res.name} value={JSON.stringify(res)}>
-                {res.name} ({res.width}×{res.height})
+                {res.name}
               </option>
             ))}
           </select>
@@ -353,12 +362,6 @@ function App() {
             controls
             style={{ width: '100%' }}
           />
-          <div className="volume-bar">
-            <div className="volume-fill" style={{ width: `${Math.min(volume * 100, 100)}%` }} />
-          </div>
-          <div className="time-info">
-            {Math.floor(currentTime)} / {Math.floor(duration)} sec
-          </div>
           <button
             onClick={isRecording ? handleStopRecording : handleRecord}
             disabled={!audioUrl}
