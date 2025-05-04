@@ -8,7 +8,7 @@ float gradient(float p) {
     vec2 p0 = vec2(0.0,0.0);
     vec2 p1 = vec2(0.7,0.1);
     vec2 p2 = vec2(0.9,0.4);
-    vec2 p3 = vec2(0.99,1.25);
+    vec2 p3 = vec2(1.0 - 3.0 / min(u_resolution.x, u_resolution.y),1.25);
     vec2 p4 = vec2(1.0,0.0);
     if (p < p0.x) return p0.y;
     if (p < p1.x) return mix(p0.y, p1.y, (p-p0.x) / (p1.x-p0.x));

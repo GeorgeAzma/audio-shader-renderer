@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
-import defaultShader from './assets/pink-cyan-waves.frag?raw'
+import defaultShader from './assets/black-waves.frag?raw'
 
 // Video resolution options
 type Resolution = {
@@ -144,7 +144,10 @@ function App() {
     // Update canvas resolution when selected resolution changes
     canvas.width = selectedResolution.width
     canvas.height = selectedResolution.height
-    const gl = canvas.getContext('webgl')
+    const gl = canvas.getContext('webgl', {
+      preserveDrawingBuffer: true,
+      antialias: false
+    })
     if (!gl) return
     glRef.current = gl
 
@@ -206,9 +209,9 @@ function App() {
     }
   }, [shaderCode, selectedResolution])
 
-  // Animation loop: render shader, update uniforms
+  // render shader, update uniforms
   useEffect(() => {
-    let lastVolume = 0; // Keep track of volume locally
+    let lastVolume = 0;
     function draw() {
       const gl = glRef.current
       const program = shaderProgramRef.current
@@ -222,7 +225,6 @@ function App() {
       const t = ((audioRef.current?.currentTime || 0))
       gl.uniform1f(uniformsRef.current.u_time, t)
 
-      // Volume uniform with improved frequency analysis
       let v = 0
       if (analyserRef.current && dataArrayRef.current) {
         analyserRef.current.getByteFrequencyData(dataArrayRef.current)
@@ -264,25 +266,37 @@ function App() {
   const handleRecord = async () => {
     if (!canvasRef.current || !audioRef.current) return
     setIsRecording(true)
-    const stream = canvasRef.current.captureStream(30)
+    const fps = 30;
+    const stream = canvasRef.current.captureStream(fps)
     const audioStream = (audioRef.current as any).captureStream()
     // Combine video and audio
     const combined = new MediaStream([
       ...stream.getVideoTracks(),
       ...audioStream.getAudioTracks()
     ])
-    const recorder = new MediaRecorder(combined, { mimeType: 'video/webm' })
+
+    const quality = 0.3;
+    const bitrate = selectedResolution.width * selectedResolution.height * fps * quality
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : 'video/webm'
+
+    const recorder = new MediaRecorder(combined, {
+      mimeType,
+      videoBitsPerSecond: bitrate
+    })
+
     recordedChunks.current = []
     recorder.ondataavailable = e => {
       if (e.data.size > 0) recordedChunks.current.push(e.data)
     }
     recorder.onstop = () => {
       setIsRecording(false)
-      const blob = new Blob(recordedChunks.current, { type: 'video/webm' })
+      const blob = new Blob(recordedChunks.current, { type: mimeType })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'visualizer.webm'
+      a.download = `visualizer.webm`
       a.click()
     }
     mediaRecorderRef.current = recorder
