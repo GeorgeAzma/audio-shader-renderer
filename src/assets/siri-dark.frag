@@ -68,7 +68,7 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min_res * 1.5;
     float t = u_time;
 
-    float vol = u_volume * 2.0;
+    float vol = u_volume;
     
     float l = dot(uv, uv);
     gl_FragColor = vec4(0);
@@ -81,7 +81,7 @@ void main() {
     // Add volume influence to noise displacement
     float nx = fbm(uv * (2.0) + t * 0.4 + 25.69, 4);
     float ny = fbm(uv * (2.0) + t * 0.4 + 86.31, 4);
-    float n = fbm(uv * (3.0 + sqrt(vol) * 0.4) + 2.0 * vec2(nx, ny), 3);
+    float n = fbm(uv * (3.0 + sqrt(vol)) + 2.0 * vec2(nx, ny), 3);
     
     vec3 col = vec3(n * 0.5 + 0.25);
     float a = atan(uv.y, uv.x) / TAU + t * 0.1;
@@ -97,7 +97,7 @@ void main() {
     float g = 1.5 * smoothstep(0.6, 1.0, fbm(norm.xy * 3.0 / (1.0 + norm.z), 2)) * d;
     c += g;
     col = c + col * pow((1.0 - smoothstep(1.0, 0.98, l) - pow(max(0.0, length(uv) - 1.0), 0.2)) * 2.0, 4.0);
-    float f = fbm(normalize(uv) * 2. + t - sqrt(vol), 2) + 0.1;
+    float f = fbm(normalize(uv) * 2. + t, 2) + 0.1;
     uv *= f + 0.1;
     uv *= 0.5;
     l = dot(uv, uv);

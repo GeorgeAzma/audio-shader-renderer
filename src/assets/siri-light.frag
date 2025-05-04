@@ -35,7 +35,7 @@ void main() {
     vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min_res * 1.1;
     float t = u_time;
     
-    float vol = u_volume * 2.0;
+    float vol = u_volume;
 
     float l = dot(uv, uv);
     gl_FragColor = vec4(1);
@@ -49,8 +49,8 @@ void main() {
     
     vec3 c = pal(a, vec3(0.3), vec3(0.3), vec3(0.0, 0.8, 0.8));
     c += l * max(0.0, l - 0.5 * dot(c, c));
-    c += 0.3 * sqrt(noise(uv * 3.0 / (1.0 + norm.z * norm.z * norm.z * 2.0)));
-    float f = fbm(normalize(uv + 1e-5) * 2. + t - sqrt(vol)) + 0.1;
+    c += 0.3 * sqrt(noise(uv * 3.0 / (1.0 + norm.z * norm.z * norm.z * 2.0) + uv));
+    float f = fbm(normalize(uv + 1e-5) * 2. + t) + 0.1;
     uv *= f + 0.1;
     uv *= 0.5;
     l = dot(uv, uv);

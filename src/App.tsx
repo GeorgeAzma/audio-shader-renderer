@@ -1,9 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
-import siriLight from './assets/siri-dark.frag?raw'
-
-// Default to the siri light shader
-const defaultShader = siriLight
+import defaultShader from './assets/blue-waves.frag?raw'
 
 // Video resolution options
 type Resolution = {
@@ -106,7 +103,7 @@ function App() {
     const source = ctx.createMediaElementSource(audio)
     sourceNodeRef.current = source
     const analyser = ctx.createAnalyser()
-    analyser.fftSize = 64 // Increased for better resolution
+    analyser.fftSize = 512 // Increased for better resolution
     analyser.smoothingTimeConstant = 0.85 // Add smoothing
     source.connect(analyser)
     analyser.connect(ctx.destination)
@@ -209,9 +206,8 @@ function App() {
         // Average of frequency data for volume
         const arr = dataArrayRef.current
         let sum = 0
-        // Focus on more meaningful frequency range (skip very low frequencies)
-        const start = Math.floor(arr.length * 0.1) // Start at 10% of frequency range
-        const end = Math.floor(arr.length * 0.8)   // End at 80% of frequency range
+        const start = Math.floor(arr.length * 0.3)
+        const end = Math.floor(arr.length * 0.7)
         for (let i = start; i < end; i++) {
           sum += arr[i]
         }
@@ -219,7 +215,7 @@ function App() {
 
         // Apply smoothing
         const smoothingFactor = 0.85 // Balanced smoothing
-        const amplification = 1.7    // Moderate amplification
+        const amplification = 2.0    // Moderate amplification
         lastVolume = smoothingFactor * lastVolume + (1 - smoothingFactor) * v
         v = Math.min(lastVolume * amplification, 1.0)
 
