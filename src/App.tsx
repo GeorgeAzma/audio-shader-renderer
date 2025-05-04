@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import './App.css'
-import defaultShader from './assets/blue-waves.frag?raw'
+import defaultShader from './assets/pink-cyan-waves.frag?raw'
 
 // Video resolution options
 type Resolution = {
@@ -216,7 +216,7 @@ function App() {
       gl.useProgram(program)
 
       // Resolution uniform
-      gl.uniform2f(uniformsRef.current.u_resolution, gl.drawingBufferWidth, gl.drawingBufferHeight)
+      gl.uniform2f(uniformsRef.current.u_resolution, selectedResolution.width, selectedResolution.height)
 
       // Time uniform
       const t = ((audioRef.current?.currentTime || 0))
@@ -249,7 +249,7 @@ function App() {
       }
       gl.uniform1f(uniformsRef.current.u_volume, v)
 
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
+      gl.viewport(0, 0, selectedResolution.width, selectedResolution.height)
       gl.clear(gl.COLOR_BUFFER_BIT)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
       animationFrameRef.current = requestAnimationFrame(draw)
@@ -258,7 +258,7 @@ function App() {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [audioUrl, shaderCode])
+  }, [audioUrl, shaderCode, selectedResolution])
 
   // Video recording
   const handleRecord = async () => {
